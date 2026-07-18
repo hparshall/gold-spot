@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08191F">
+<title>Gold Spot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:      #08191F;
+    --ink-2:    #0F2C36;
+    --rule:     #1E4655;
+    --mist:     #7E9AA6;
+    --gold:     #D8A93A;
+    --gold-lit: #FBEFC0;
+    --gold-deep:#7A5410;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{min-height:100%}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(120% 80% at 50% -10%, var(--ink-2) 0%, var(--ink) 60%);
+    background-attachment:fixed;
+    color:var(--mist);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    -webkit-font-smoothing:antialiased;
+    display:flex;justify-content:center;
+    padding:clamp(20px,5vw,48px) clamp(16px,5vw,24px)
+            calc(48px + env(safe-area-inset-bottom));
+  }
+  .wrap{width:100%;max-width:520px}
+
+
+  /* ---- hero: the spot price ---- */
+  .hero{padding:clamp(8px,3vw,20px) 0 clamp(26px,7vw,40px);text-align:center}
+  .price{
+    font-family:"Playfair Display",Georgia,serif;
+    font-weight:700;
+    font-size:clamp(44px,12.5vw,78px);
+    line-height:1.16;
+    padding-bottom:.18em;
+    letter-spacing:-.015em;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(100deg,
+      var(--gold-deep) 0%, var(--gold) 24%, var(--gold-lit) 42%,
+      var(--gold) 58%, var(--gold-deep) 82%, var(--gold) 100%);
+    background-size:280% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;
+    animation:sheen 9s linear infinite;
+  }
+  @keyframes sheen{from{background-position:180% 0}to{background-position:-100% 0}}
+  .price .cur{font-size:.66em;margin-right:.08em}
+  .price .comma{font-size:1.12em;margin:0 .01em}
+  .price.loading{animation:none;opacity:.45}
+  .hero .unit{
+    margin-top:18px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  }
+  .hero .unit b{color:#B9CFD9;font-weight:500}
+
+  /* ---- per-gram table ---- */
+  .eyebrow{
+    display:flex;align-items:center;gap:12px;
+    font-size:10px;letter-spacing:.24em;text-transform:uppercase;margin-bottom:12px;
+  }
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+  thead th{
+    font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;
+    color:var(--mist);text-align:right;padding:0 0 9px;white-space:nowrap;
+  }
+  thead th:first-child{text-align:left}
+  tbody td{
+    padding:12px 0;border-top:1px solid var(--rule);text-align:right;color:#DCE8ED;
+  }
+  tbody td:first-child{
+    text-align:left;color:var(--gold);font-weight:600;letter-spacing:.08em;
+  }
+  tbody td.markup{color:var(--mist)}
+  tbody tr:last-child td{border-bottom:1px solid var(--rule)}
+  tbody tr:last-child td:first-child{color:var(--gold-lit)}
+
+  /* ---- calculator ---- */
+  .calc{display:flex;flex-direction:column;gap:14px}
+  .calc-top{display:flex;gap:12px}
+  .calc-top .field{flex:1}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .flabel{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist)}
+  select,.calc input{
+    font:inherit;font-size:15px;color:#DCE8ED;background:#08161C;
+    border:1px solid var(--rule);border-radius:2px;padding:10px 11px;width:100%;
+  }
+  select{
+    appearance:none;-webkit-appearance:none;cursor:pointer;color:var(--gold);font-weight:600;
+    background-image:linear-gradient(45deg,transparent 50%,var(--mist) 50%),
+                     linear-gradient(135deg,var(--mist) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 19px, calc(100% - 11px) 19px;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  }
+  select:focus-visible,.calc input:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+
+  .seg{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+  .seg button{
+    flex:1;border:0;border-radius:0;padding:11px 6px;
+    font-size:10px;letter-spacing:.1em;color:var(--mist);background:transparent;
+  }
+  .seg button + button{border-left:1px solid var(--rule)}
+  .seg button.on{background:rgba(216,169,58,.12);color:var(--gold-lit)}
+
+  .inwrap{display:flex;align-items:center;background:#08161C;border:1px solid var(--rule);border-radius:2px}
+  .inwrap:focus-within{outline:2px solid var(--gold);outline-offset:1px}
+  .inwrap input{border:0;background:transparent;font-variant-numeric:tabular-nums}
+  .inwrap input:focus-visible{outline:none}
+  .affix{color:var(--mist);font-size:14px;padding:0 11px;flex:none}
+  .affix:empty{display:none}
+  /* strip the spinner so the field reads as a number, not a stepper */
+  .calc input::-webkit-outer-spin-button,.calc input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .calc input[type=number]{-moz-appearance:textfield}
+
+  .result{
+    display:flex;flex-direction:column;gap:3px;
+    border-top:1px solid var(--rule);padding-top:14px;
+  }
+  .rlabel{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist)}
+  .range{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .rend{display:flex;flex-direction:column;gap:2px}
+  .rval{
+    font-size:clamp(19px,5.6vw,26px);font-weight:600;color:var(--gold-lit);
+    font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap;
+  }
+  .rcap{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+  .rdash{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5C7681}
+  .rwork{font-size:10.5px;color:#5C7681;letter-spacing:.04em;min-height:14px}
+
+  /* ---- footer ---- */
+  .foot{margin-top:20px;display:flex;align-items:center;gap:8px}
+  button{
+    font:inherit;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--gold);background:transparent;border:1px solid var(--rule);
+    padding:9px 15px;border-radius:2px;cursor:pointer;white-space:nowrap;
+    transition:border-color .2s,color .2s;
+  }
+  button:hover{border-color:var(--gold);color:var(--gold-lit)}
+  button:focus-visible{outline:2px solid var(--gold-lit);outline-offset:2px}
+  .note{
+    margin-top:14px;font-size:10.5px;letter-spacing:.06em;
+    color:#5C7681;text-align:right;line-height:1.6;
+  }
+  .note.warn{color:#B08A3C}
+
+  /* ---- manual fallback ---- */
+  .manual{
+    margin-top:16px;padding:14px;border:1px solid var(--rule);border-radius:2px;
+    display:none;
+  }
+  .manual.show{display:block}
+  .manual p{font-size:11px;line-height:1.6;color:#B9CFD9;margin-bottom:10px}
+  .why{margin-bottom:12px}
+  .why span{
+    display:block;font-size:10px;line-height:1.5;color:#5C7681;
+    padding-left:10px;border-left:1px solid var(--rule);margin-bottom:5px;
+  }
+  .manual .row{display:flex;gap:8px}
+  .manual input{
+    flex:1;font:inherit;font-size:14px;color:var(--gold-lit);background:#08161C;
+    border:1px solid var(--rule);border-radius:2px;padding:9px 10px;
+  }
+  .manual input:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+    .price{background-position:40% 0}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="price loading" id="price"><span class="cur">$</span>——</div>
+    <div class="unit">per troy ounce · <b>24k fine</b></div>
+  </div>
+
+  <div class="eyebrow">Per gram</div>
+  <table>
+    <thead>
+      <tr><th>Karat</th><th>Spot</th><th>Spot + 50%</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="eyebrow" style="margin-top:30px">Calculate</div>
+  <div class="calc">
+    <div class="calc-top">
+      <label class="field">
+        <span class="flabel">Karat</span>
+        <select id="cKarat"></select>
+      </label>
+      <div class="field">
+        <span class="flabel">I know the</span>
+        <div class="seg" id="cMode" role="group" aria-label="Input type">
+          <button type="button" data-mode="g" class="on" aria-pressed="true">Weight</button>
+          <button type="button" data-mode="d" aria-pressed="false">Total $</button>
+        </div>
+      </div>
+    </div>
+    <label class="field">
+      <span class="flabel" id="cLabel">Weight in grams</span>
+      <div class="inwrap">
+        <span class="affix" id="cPre"></span>
+        <input id="cInput" type="number" inputmode="decimal" step="any" min="0" placeholder="0">
+        <span class="affix" id="cSuf">g</span>
+      </div>
+    </label>
+    <div class="result" id="cResult">
+      <span class="rlabel" id="cRLabel">Value</span>
+      <div class="range">
+        <span class="rend"><span class="rval" id="cLo">—</span><span class="rcap" id="cLoCap">at spot</span></span>
+        <span class="rdash">to</span>
+        <span class="rend"><span class="rval" id="cHi">—</span><span class="rcap" id="cHiCap">at +50%</span></span>
+      </div>
+      <span class="rwork" id="cRWork"></span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button id="refresh" type="button">Refresh</button>
+    <button id="setBtn" type="button">Set by hand</button>
+  </div>
+  <p class="note" id="note">1 troy oz = 31.1035 g</p>
+
+  <div class="manual" id="manual">
+    <p>Enter a spot price per troy ounce to use instead of the feed.</p>
+    <div class="why" id="why"></div>
+    <div class="row">
+      <input id="manualInput" type="number" inputmode="decimal" step="0.01" placeholder="3250.00" aria-label="Spot price per troy ounce">
+      <button id="manualGo" type="button">Use</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+const TROY_OZ_G = 31.1034768;
+const KARATS    = [9, 10, 14, 18, 24];
+const MARKUP    = 1.5;
+const SANE_MIN  = 200, SANE_MAX = 100000;  // reject a feed returning nonsense
+const STALE_MIN = 30;                      // quote older than this = stale
+const CACHE_MS  = 30000;                   // gold-api asks callers to cache 30s
+const TIMEOUT_MS = 8000;
+const FEED_URL  = 'https://api.gold-api.com/price/XAU';
+const FEED_NAME = 'gold-api.com';
+const BASE_NOTE = '1 troy oz = 31.1035 g';
+
+const $     = id => document.getElementById(id);
+const money = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const grams = n => n.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
+const clock = d => d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+
+let timer     = null;
+let spotPerOz = null;    // latest $/troy oz, shared with the calculator
+let manual    = false;   // a hand-entered price holds until Refresh is pressed
+let inFlight  = null;    // dedupes overlapping loads
+let cache     = null;    // {price, quotedAt, ttl, at}
+
+/* ---- feed ---- */
+async function fetchSpot(){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  try {
+    const r = await fetch(FEED_URL, {signal: ctl.signal});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const body = await r.json();
+
+    const price = Number(body.price);
+    if (!isFinite(price) || price < SANE_MIN || price > SANE_MAX) throw new Error('price out of range');
+
+    // An unparseable timestamp must not reach the UI as "Invalid Date".
+    let quotedAt = body.updatedAt ? new Date(body.updatedAt) : null;
+    if (!quotedAt || isNaN(quotedAt.getTime())) quotedAt = null;
+
+    // Honour the feed's own cache window, never dipping below their 30s floor.
+    const secs = parseInt((r.headers.get('cache-control') || '').match(/max-age=(\d+)/)?.[1], 10);
+    const ttl  = Math.max(CACHE_MS, isFinite(secs) ? secs * 1000 : 0);
+    return {price, quotedAt, ttl};
+  } finally { clearTimeout(t); }
+}
+
+function describe(e){
+  if (e.name === 'AbortError') return 'timed out after ' + (TIMEOUT_MS / 1000) + 's';
+  if (e instanceof TypeError)  return 'blocked or unreachable (CORS / sandbox / offline)';
+  return e.message;
+}
+
+/* ---- rendering ---- */
+function paint(spot){
+  spotPerOz = spot;
+  $('price').classList.remove('loading');
+  $('price').innerHTML = '<span class="cur">$</span>' +
+    money(spot).replace(/,/g, '<span class="comma">,</span>');
+  const perGram24 = spot / TROY_OZ_G;
+  $('rows').innerHTML = KARATS.map(k => {
+    const g = perGram24 * (k / 24);
+    return `<tr><td>${k}k</td><td>$${money(g)}</td><td class="markup">$${money(g * MARKUP)}</td></tr>`;
+  }).join('');
+  calc();
+}
+
+function note(text, warn){
+  $('note').classList.toggle('warn', !!warn);
+  $('note').innerHTML = BASE_NOTE + '<br>' + text;
+}
+
+function show(c){
+  const stale = c.quotedAt ? (Date.now() - c.quotedAt.getTime()) / 60000 > STALE_MIN : false;
+  const when  = c.quotedAt
+    ? (stale ? 'Stale · quoted ' : 'Quoted ') + clock(c.quotedAt)
+    : 'Fetched ' + clock(new Date(c.at));   // feed gave no usable timestamp
+  paint(c.price);
+  note(when + ' · ' + FEED_NAME, stale);
+}
+
+function schedule(ms){
+  clearTimeout(timer);
+  timer = setTimeout(load, Math.max(CACHE_MS, ms));
+}
+
+/* ---- load cycle ---- */
+async function load(){
+  if (manual) return;              // hand-entered price wins until Refresh
+  if (inFlight) return inFlight;   // never run two fetches at once
+
+  // Inside the feed's cache window there is nothing newer to get: reuse it.
+  if (cache && Date.now() - cache.at < cache.ttl){
+    show(cache);
+    schedule(cache.at + cache.ttl - Date.now());
+    return;
+  }
+
+  clearTimeout(timer);
+  note('Fetching live price\u2026', false);
+
+  inFlight = (async () => {
+    try {
+      const r = await fetchSpot();
+      cache = {price: r.price, quotedAt: r.quotedAt, ttl: r.ttl, at: Date.now()};
+      $('manual').classList.remove('show');
+      show(cache);
+      schedule(r.ttl);
+    } catch (e){
+      offline(FEED_NAME + ' \u2014 ' + describe(e));
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
+}
+
+function offline(reason){
+  const havePrice = !$('price').classList.contains('loading');
+  note(havePrice ? 'Feed down \u00b7 showing last known' : 'No feed', true);
+  $('why').innerHTML = '<span>' + reason + '</span>';
+  $('manual').classList.add('show');
+  schedule(60000);   // keep retrying quietly
+}
+
+/* ---- calculator ---- */
+const KNAMES = {9:'9k', 10:'10k', 14:'14k', 18:'18k', 24:'24k (fine)'};
+let mode = 'g';   // 'g' = weight known, 'd' = dollars known
+
+$('cKarat').innerHTML = KARATS.map(k =>
+  `<option value="${k}"${k === 14 ? ' selected' : ''}>${KNAMES[k]}</option>`).join('');
+
+const perGram = k => spotPerOz === null ? null : (spotPerOz / TROY_OZ_G) * (k / 24);
+
+function calc(){
+  const k  = Number($('cKarat').value);
+  const v  = parseFloat($('cInput').value);
+  const pg = perGram(k);
+
+  $('cLabel').textContent  = mode === 'g' ? 'Weight in grams' : 'Total price of the piece';
+  $('cPre').textContent    = mode === 'g' ? ''  : '$';
+  $('cSuf').textContent    = mode === 'g' ? 'g' : '';
+  $('cRLabel').textContent = mode === 'g' ? 'Value' : 'Weight with that value';
+
+  const blank = msg => {
+    $('cLo').textContent = $('cHi').textContent = '\u2014';
+    $('cRWork').textContent = msg;
+  };
+  if (pg === null) return blank('Waiting on a spot price');
+  if (!isFinite(v) || v <= 0) return blank('');
+
+  const pgHi = pg * MARKUP;   // per-gram at spot + 50%
+
+  if (mode === 'g'){
+    // More dollars per gram means a higher value: spot is the low end.
+    $('cLo').textContent = '$' + money(v * pg);
+    $('cHi').textContent = '$' + money(v * pgHi);
+    $('cLoCap').textContent = 'at spot';
+    $('cHiCap').textContent = 'at +50%';
+    $('cRWork').textContent = grams(v) + ' g \u00d7 $' + money(pg) + '\u2013$' + money(pgHi) + '/g at ' + KNAMES[k];
+  } else {
+    // More dollars per gram means the same money buys LESS gold: +50% is the low end.
+    $('cLo').textContent = grams(v / pgHi) + ' g';
+    $('cHi').textContent = grams(v / pg) + ' g';
+    $('cLoCap').textContent = 'at +50%';
+    $('cHiCap').textContent = 'at spot';
+    $('cRWork').textContent = '$' + money(v) + ' \u00f7 $' + money(pg) + '\u2013$' + money(pgHi) + '/g at ' + KNAMES[k];
+  }
+}
+
+$('cMode').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-mode]');
+  if (!btn) return;
+  mode = btn.dataset.mode;
+  [...$('cMode').children].forEach(b => {
+    const on = b === btn;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+  });
+  $('cInput').value = '';
+  calc(); $('cInput').focus();
+});
+$('cKarat').addEventListener('change', calc);
+$('cInput').addEventListener('input', calc);
+
+/* ---- controls ---- */
+$('refresh').addEventListener('click', () => {
+  manual = false;               // the only thing that drops a hand-entered price
+  $('manual').classList.remove('show');
+  load();
+});
+$('setBtn').addEventListener('click', () => {
+  $('manual').classList.toggle('show');
+  if ($('manual').classList.contains('show')) $('manualInput').focus();
+});
+$('manualGo').addEventListener('click', () => {
+  const p = Number($('manualInput').value);
+  if (!isFinite(p) || p <= 0) return;
+  manual = true;
+  clearTimeout(timer);          // stop polling; this price holds
+  paint(p);
+  note('Entered by hand \u00b7 Refresh to go back to the feed', true);
+});
+$('manualInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('manualGo').click(); });
+
+// Phones suspend background tabs; re-check on return (no-op while manual, cached inside 30s).
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+window.addEventListener('online', load);
+
+load();
+</script>
+</body>
+</html>
