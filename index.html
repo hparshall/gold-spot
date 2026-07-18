@@ -227,11 +227,43 @@
     </div>
   </div>
 
+  <div class="eyebrow" style="margin-top:30px">Check a deal</div>
+  <div class="calc">
+    <div class="calc-top">
+      <label class="field">
+        <span class="flabel">Karat</span>
+        <select id="vKarat"></select>
+      </label>
+      <label class="field">
+        <span class="flabel">Weight in grams</span>
+        <div class="inwrap">
+          <input id="vWeight" type="number" inputmode="decimal" step="any" min="0" placeholder="0">
+          <span class="affix">g</span>
+        </div>
+      </label>
+    </div>
+    <label class="field">
+      <span class="flabel">Price of the piece</span>
+      <div class="inwrap">
+        <span class="affix">$</span>
+        <input id="vPrice" type="number" inputmode="decimal" step="any" min="0" placeholder="0">
+      </div>
+    </label>
+    <div class="result" id="vResult">
+      <span class="rlabel">Result</span>
+      <div class="range">
+        <span class="rend"><span class="rval" id="vPerGram">—</span><span class="rcap">per gram</span></span>
+        <span class="rend"><span class="rval" id="vMarkup">—</span><span class="rcap">vs spot</span></span>
+      </div>
+      <span class="rwork" id="vWork"></span>
+    </div>
+  </div>
+
   <div class="foot">
     <button id="refresh" type="button">Refresh</button>
     <button id="setBtn" type="button">Set by hand</button>
   </div>
-  <p class="note" id="note">1 troy oz = 31.1035 g</p>
+  <p class="note" id="note">1 troy oz = 31.1 g</p>
 
   <div class="manual" id="manual">
     <p>Enter a spot price per troy ounce to use instead of the feed.</p>
@@ -256,7 +288,7 @@ const CACHE_MS  = 30000;                   // gold-api asks callers to cache 30s
 const TIMEOUT_MS = 8000;
 const FEED_URL  = 'https://api.gold-api.com/price/XAU';
 const FEED_NAME = 'gold-api.com';
-const BASE_NOTE = '1 troy oz = 31.1035 g';
+const BASE_NOTE = '1 troy oz = 31.1 g';
 
 const $     = id => document.getElementById(id);
 const money = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -310,6 +342,7 @@ function paint(spot){
     return `<tr><td>${k}k</td><td>$${money(g)}</td><td class="markup">$${money(g * MARKUP)}</td></tr>`;
   }).join('');
   calc();
+  vcalc();
 }
 
 function note(text, warn){
@@ -429,6 +462,38 @@ $('cMode').addEventListener('click', e => {
 });
 $('cKarat').addEventListener('change', calc);
 $('cInput').addEventListener('input', calc);
+
+/* ---- deal checker: weight + price in, $/g and markup vs spot out ---- */
+const pct = n => (n >= 0 ? '+' : '\u2212') + Math.abs(n).toFixed(1) + '%';
+
+$('vKarat').innerHTML = KARATS.map(k =>
+  `<option value="${k}"${k === 14 ? ' selected' : ''}>${KNAMES[k]}</option>`).join('');
+
+function vcalc(){
+  const k  = Number($('vKarat').value);
+  const w  = parseFloat($('vWeight').value);
+  const p  = parseFloat($('vPrice').value);
+  const pg = perGram(k);
+
+  const blank = msg => {
+    $('vPerGram').textContent = $('vMarkup').textContent = '\u2014';
+    $('vWork').textContent = msg;
+  };
+  if (pg === null) return blank('Waiting on a spot price');
+  if (!isFinite(w) || w <= 0 || !isFinite(p) || p <= 0) return blank('');
+
+  const paid      = p / w;                    // $ actually paid per gram
+  const markupPct = (paid / pg - 1) * 100;    // vs spot per-gram at this karat
+
+  $('vPerGram').textContent = '$' + money(paid);
+  $('vMarkup').textContent  = pct(markupPct);
+  $('vWork').textContent = '$' + money(p) + ' \u00f7 ' + grams(w) + ' g = $' + money(paid) +
+    '/g \u00b7 spot at ' + KNAMES[k] + ' is $' + money(pg) + '/g';
+}
+
+$('vKarat').addEventListener('change', vcalc);
+$('vWeight').addEventListener('input', vcalc);
+$('vPrice').addEventListener('input', vcalc);
 
 /* ---- controls ---- */
 $('refresh').addEventListener('click', () => {
